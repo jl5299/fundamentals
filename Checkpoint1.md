@@ -1,6 +1,6 @@
-July 27th, 3 weeks
+# July 27th, 3 weeks
 
-Access and manipulate data from Compustat, set up coding environment, learn Matlab and the theory behind project, and pull + normalize relevant data
+**Access and manipulate data from Compustat, set up coding environment, learn Matlab and the theory behind project, and pull + normalize relevant data**
 
 ..................................................................................
 

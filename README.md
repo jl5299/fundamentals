@@ -1,6 +1,6 @@
 ---
-title: "Portfolio Optimization using Crude Fundamental Analysis"
-author: "Justin Law"
+Title: "Portfolio Optimization using Crude Fundamental Analysis"
+Author: "Justin Law"
 ---
 # Fundamentals
 Research project with Professor Benjamin Gillen
@@ -10,9 +10,9 @@ Agnostic Fundamental Analysis Works
 
 
 # Study Design
-#wrds data : https://wrds-www.wharton.upenn.edu/
+**wrds data : https://wrds-www.wharton.upenn.edu/**
 
-#compustat data:
+**compustat data:**
 Saved Query -- "Compustat - AnnualData" - Compustat Point in Time Complete History - US
 
 Get Data ->
@@ -36,7 +36,7 @@ Market cap = Number of shares outstanding times its price per share
 Sometimes adjustments are made to account for the number of trade-able (free-float) shares
 
 
-#crsp data :
+**crsp data:**
 Saved Query -- "Shares outstanding, price, return" - CRSP Monthly Stock
 Saved Query -- "Returns, Beta" - CRSP Beta Suite by WRDS (Beta)
 
@@ -50,19 +50,19 @@ Share Price, Number of Shares outstanding, Monthly stock return, and annual mark
 1) Share Price / Number of shares outstanding
 2) Returns / Beta
 
-#fama french data:
+**fama french data:** 
 Industry classification, portfolios - 38 Industry Portfolios: http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html#BookEquity
 Industry sic keys:
 http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/det_38_ind_port.html
 To add:
 Mkt_RF, SMB, HML, Mom, ST-Rev, LT_Rev, CMA, RMW
 
-#SUE - quarterly unexpected earnings suprised based on rolling seasonal random walk model (Livnat et al. p185)
+**SUE - quarterly unexpected earnings suprised based on rolling seasonal random walk model (Livnat et al. p185)**
 
 
 .............................................................................................
-MATLAB
-
+# MATLAB
+Resource - Pseudocode from Professor Gillen
 
 .............................................................................................
 
