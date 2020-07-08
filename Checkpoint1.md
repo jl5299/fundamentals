@@ -1,0 +1,11 @@
+July 27th, 3 weeks
+
+Access and manipulate data from Compustat, set up coding environment, learn Matlab and the theory behind project, and pull + normalize relevant data
+
+..................................................................................
+
+The first stage of this project involved a lot of learning -- from programming skills to economics and econometrics. Frontloading the 80 hours courseload requirement helped with the learning curve, but a lot of time was spent reading the paper our research is based on, Bartram & Grinblatt, and searching the web for tutorials and guides on the many different facets of this project. As Professor Gillen put it, this field isn't hard once you see the six sides of the cube, but before then, there are a lot of different skills that I have to learn before I can put them together.
+
+Accessing Compustat was an easy step -- CMC has direct access, so pulling the data was simply submitting queries on the wrds website. An alternative method that I attempted was by downloading SAS and accessing the wrds API directly through a virtual machine run on SAS/VirtualBox. This method proved promising all the way up until hitting the API, at which point I started getting errors. Further research may have warranated diving deeper into this method, given its modularity and potential for automation, but for the purposes of this project, submitting queries directly will do.
+
+Loading and normalizing data is currently done through mainrun.R -- this is then ported into a separate file that can be run on a loop to attend to each run. Currently, 1 year is done at a time to make sure everything works from reading the csv file to normalizing columns and merging data from CRSP and compustat to 1 final output. Regression (stage 2) will be done in MATLAB, so the next step from here is porting the data from R. Much, if not all, of the data cleaning done in this step is a result of the R courses I took on coursera and the swirl tutorials that came with them. This wouldn't have been possible without the learning aspect of the fellowship, so I'm glad that I"m able to mix the experiential learning aspect of my project with the coursera learning aspect. 

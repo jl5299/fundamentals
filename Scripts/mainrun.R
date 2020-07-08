@@ -25,19 +25,30 @@ crspReturnsBetaData <- read.table("./Data/1987ReturnsBetaCRSP.csv", sep = ",", h
 # Load CRSP data for share price and number of shares outstanding
 crspPriceSharesData <- read.table("./Data/1987PriceSharesCRSP.csv", sep = ",", header = TRUE, quote ="")
 
-# Normalize prep for CUSIP and Date
-filteredData = mutate(filteredData, Date = POINTDATE, CUSIP = cusip)
-crspReturnsBetaData = mutate(crspReturnsBetaData, Date = DATE)
-crspPriceSharesData = mutate(crspPriceSharesData, Date = date)
+
+# Remove if missing data
+crspReturnsBetaData = subset(crspReturnsBetaData, !(is.na(crspReturnsBetaData$TICKER) | is.na(crspReturnsBetaData$DATE) 
+                                             | crspReturnsBetaData$TICKER == "" | crspReturnsBetaData$DATE == ""))
+
+# Remove if missing data & share price < 5
+crspPriceSharesData = subset(crspPriceSharesData, !(is.na(crspPriceSharesData$TICKER) | is.na(crspPriceSharesData$date) 
+                                             | crspPriceSharesData$TICKER == "" | crspPriceSharesData$date == ""
+                                             | crspPriceSharesData$PRC < 5 | is.na(crspPriceSharesData$SHROUT)))
+
+# Normalize prep for CUSIP and Date, removing extra columns
+filteredData = rename(filteredData, Date = POINTDATE, CUSIP = cusip)
+crspReturnsBetaData = rename(crspReturnsBetaData, Date = DATE)
+crspPriceSharesData = rename(crspPriceSharesData, Date = date)
+crspPriceSharesData = select(crspPriceSharesData, -RET)
+
+# Fix CUSIPS in Compustat Data
+filteredData = mutate(filteredData, CUSIP = substr(CUSIP,0,8))
 
 # Match with CRSP Data using CUSIP
-crspMerge <- merge(crspPriceSharesData, crspReturnsBetaData, by.x = "TICKER", by.y = "Date", all = TRUE)
-finalMerge <- merge(filteredData, crspMerge, by.x = "CUSIP", by.y = "Date", all = TRUE)
+crspMerge <- merge(crspReturnsBetaData, crspPriceSharesData, by = c("TICKER", "Date","PERMNO"), all = FALSE)
+
+finalMerge <- merge(crspMerge, filteredData, by = c("CUSIP", "Date"), all = FALSE)
 
 # Send finalMerged data table to Matlab for regression
-
-
-
-
-
+write.csv(finalMerge, "./Data/OrganizedData/1987Data.csv", row.names = FALSE)
 

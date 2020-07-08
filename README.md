@@ -11,6 +11,10 @@ Agnostic Fundamental Analysis Works
 
 # Study Design
 #wrds data : https://wrds-www.wharton.upenn.edu/
+
+#compustat data:
+Saved Query -- "Compustat - AnnualData" - Compustat Point in Time Complete History - US
+
 Get Data ->
 - 1 year
 - GVKEY
@@ -32,7 +36,10 @@ Market cap = Number of shares outstanding times its price per share
 Sometimes adjustments are made to account for the number of trade-able (free-float) shares
 
 
-#crsp data : http://crsp.org/files/ccm_data_guide_0.pdf | http://www.crsp.org/ | https://wrds-web.wharton.upenn.edu/wrds/ds/crsp/ccm_a/secm/index.cfm?navId=120
+#crsp data :
+Saved Query -- "Shares outstanding, price, return" - CRSP Monthly Stock
+Saved Query -- "Returns, Beta" - CRSP Beta Suite by WRDS (Beta)
+
 - Ticker Symbol
 - CUSIP
 - Price close monthly
@@ -42,7 +49,6 @@ Share Price, Number of Shares outstanding, Monthly stock return, and annual mark
 
 1) Share Price / Number of shares outstanding
 2) Returns / Beta
-
 
 #fama french data:
 Industry classification, portfolios - 38 Industry Portfolios: http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html#BookEquity
@@ -54,6 +60,9 @@ Mkt_RF, SMB, HML, Mom, ST-Rev, LT_Rev, CMA, RMW
 #SUE - quarterly unexpected earnings suprised based on rolling seasonal random walk model (Livnat et al. p185)
 
 
+.............................................................................................
+MATLAB
 
 
+.............................................................................................
 
