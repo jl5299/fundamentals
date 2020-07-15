@@ -1,4 +1,5 @@
 library(dplyr)
+year <- 1987
 # Load data in
 compustatData <- read.table("./Data/1987DataCompustat.csv", sep = ",", header = TRUE, quote ="")
 head(compustatData)
@@ -48,6 +49,9 @@ filteredData = mutate(filteredData, CUSIP = substr(CUSIP,0,8))
 crspMerge <- merge(crspReturnsBetaData, crspPriceSharesData, by = c("TICKER", "Date","PERMNO"), all = FALSE)
 
 finalMerge <- merge(crspMerge, filteredData, by = c("CUSIP", "Date"), all = FALSE)
+
+# Make capitalization column
+finalMerge = mutate(finalMerge, capital = finalMerge$SHROUT * finalMerge$PRC)
 
 # Send finalMerged data table to Matlab for regression
 write.csv(finalMerge, "./Data/OrganizedData/1987Data.csv", row.names = FALSE)
