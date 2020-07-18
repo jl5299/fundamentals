@@ -42,17 +42,28 @@ crspReturnsBetaData = rename(crspReturnsBetaData, Date = DATE)
 crspPriceSharesData = rename(crspPriceSharesData, Date = date)
 crspPriceSharesData = select(crspPriceSharesData, -RET)
 
+# Remove all non EOY data points - throwing out dates that don't end with 1231
+filteredData = filteredData[ which(substr(filteredData$Date, 5, 8) == "1231"),]
+
 # Fix CUSIPS in Compustat Data
 filteredData = mutate(filteredData, CUSIP = substr(CUSIP,0,8))
 
-# Match with CRSP Data using CUSIP
-crspMerge <- merge(crspReturnsBetaData, crspPriceSharesData, by = c("TICKER", "Date","PERMNO"), all = FALSE)
+# Remove duplicate CUSIPS
+filteredData = filteredData[!duplicated(filteredData$CUSIP), ]
 
-finalMerge <- merge(crspMerge, filteredData, by = c("CUSIP", "Date"), all = FALSE)
+# Match with CRSP Data using CUSIP
+#crspMerge <- merge(crspReturnsBetaData, crspPriceSharesData, by = c("TICKER", "Date","PERMNO"), all = FALSE)
+# REWRITTEN SO PRICE SHARES GO WITH FILTEREDDATA AND RETURNS IS ALONE IN COLUMNAR FORM - RE-DO RETURNS QUERY
+fundamentalMerge <- merge(crspPriceSharesData, filteredData, by = c("CUSIP", "Date"), all = FALSE)
+
+# Remove row from fundamentalMerge if data not also in returns data
+fundamentalMerge = subset(fundamentalMerge, TICKER %in% crspReturnsBetaData$TICKER)
 
 # Make capitalization column
-finalMerge = mutate(finalMerge, capital = finalMerge$SHROUT * finalMerge$PRC)
+fundamentalMerge = mutate(fundamentalMerge, capital = fundamentalMerge$SHROUT * fundamentalMerge$PRC)
 
-# Send finalMerged data table to Matlab for regression
-write.csv(finalMerge, "./Data/OrganizedData/1987Data.csv", row.names = FALSE)
+# Send fundamentalMerge data table to Matlab for regression
+write.csv(fundamentalMerge, "./Data/OrganizedData/1987Fundamentals.csv", row.names = FALSE)
 
+# Send crspReturnsBetaData data table to Matlab for regression
+write.csv(crspReturnsBetaData, "./Data/OrganizedData/1987Returns.csv", row.names = FALSE)
