@@ -36,23 +36,19 @@ compustatData <- subset(compustatData, exchg %in% 1:3)
 # Remove if negative total assets
 compustatData <- subset(compustatData, ATQh > 0)
 
+# Match Compustat Data with link table using GVKEY, throwing out those that don't match - this gives us PERMNO
+compustatData <- left_join(compustatData, linkTable, by = c("conm","tic","GVKEY"), by.y = "PERMNO", all.x = TRUE)
 
-# Remove duplicate CUSIPS
-compustatData <- compustatData[!duplicated(compustatData$CUSIP), ]
-# Fix CUSIPS in Compustat Data
-# compustatData <- mutate(compustatData, CUSIP = substr(CUSIP,0,8))
-
-compustatDataTEMP1 <- left_join(compustatData, linkTable, by = "GVKEY", all = FALSE, copy = FALSE, keep = FALSE)
-compustatDataTEMP <- left_join(compustatDataTEMP1, linkTable, by = "CUSIP.x", all = FALSE)
-compustatDataTEMP <- na.omit(compustatDataTEMP)
-
-
+# Remove NAs and duplicate CUSIPS & GVKEYS
+compustatData <- compustatData[!(duplicated(compustatData$CUSIP.x) | duplicated(compustatData$CUSIP.y)), ]
+compustatData <- compustatData[!duplicated(compustatData$GVKEY), ]
+compustatData <- na.omit(compustatData)
 
 # ------------------------ CRSP RETURNS/BETA DATA -------------------------
-# Remove unnecessary columns
-crspReturnsBetaData <- select(crspReturnsBetaData, RET, TICKER, PERMNO, DATE)
 # Normalize prep for CUSIP and Date, removing extra columns
 crspReturnsBetaData <- rename(crspReturnsBetaData, Date = DATE)
+# Remove unnecessary columns
+crspReturnsBetaData <- select(crspReturnsBetaData, RET, TICKER, PERMNO, Date)
 # Remove if missing data
 crspReturnsBetaData <- subset(crspReturnsBetaData, !(is.na(crspReturnsBetaData$TICKER) | is.na(crspReturnsBetaData$Date) 
                                                     | crspReturnsBetaData$TICKER == "" | crspReturnsBetaData$Date == ""))
@@ -70,16 +66,29 @@ crspPriceSharesData <- subset(crspPriceSharesData, !(is.na(crspPriceSharesData$T
 
 # ------------------ FUNDAMENTALDATA - MERGE & REMOVE DATA THAT DOESN'T HAVE ALL REQUIREMENTS ACROSS DATASETS -------------------
 # Match with CRSP Data using CUSIP
-fundamentalMerge <- merge(crspPriceSharesData, compustatDataTEMP, by = c("PERMNO", "Date"), all = FALSE)
+fundamentalMerge <- merge(compustatData, crspPriceSharesData, by = c("PERMNO", "Date"), all = FALSE)
 
 # Remove row from fundamentalMerge if data not also in returns data
-fundamentalMerge <- subset(fundamentalMerge, TICKER %in% crspReturnsBetaData$TICKER)
+fundamentalMerge <- subset(fundamentalMerge, PERMNO %in% crspReturnsBetaData$PERMNO)
 
 # Make capitalization column
 fundamentalMerge <- mutate(fundamentalMerge, capital = fundamentalMerge$SHROUT * fundamentalMerge$PRC)
 
-# ---------------- FORMAT RETURNS DATA INTO COLUMNAR FORM WITH COLS OF SECURITIES AND ROWS OF HISTORICAL RETURNS -----------------
+# Final check for no NAs
+fundamentalMerge <- na.omit(fundamentalMerge)
 
+# Remove broken CUIPS & other ID cols that are causing trouble in MATLAB
+fundamentalMerge <- select(fundamentalMerge, -CUSIP.x, -CUSIP.y, -LIID, -LINKENDDT, -CUSIP)
+
+
+# ---------------- FORMAT RETURNS DATA INTO COLUMNAR FORM WITH COLS OF SECURITIES AND ROWS OF HISTORICAL RETURNS -----------------
+# take only returns PERMNOs that also exist in fundamentalMerge
+
+# count distinct PERMNOs in Returns data to double check columns match rows
+
+# transpose so that columns are equities and rows are returns
+
+# get rid of extraneous data
 
 
 # ------------------------ EXPORT AS CSV -------------------------
