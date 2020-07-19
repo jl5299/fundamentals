@@ -50,6 +50,10 @@ Share Price, Number of Shares outstanding, Monthly stock return, and annual mark
 1) Share Price / Number of shares outstanding
 2) Returns / Beta
 
+The data we had access to didn't specify the share classes, differing in procedure from Bartram Grinblatt -- they took only common euqity share classes of US corporations (10 and 11). Ignoring this specification should be alright - majority of stocks that are listed in NYSE, NASDAQ, and AMEX should provide the same results.
+
+
+
 **fama french data:** 
 Industry classification, portfolios - 38 Industry Portfolios: http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html#BookEquity
 Industry sic keys:
