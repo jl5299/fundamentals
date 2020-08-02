@@ -1,4 +1,5 @@
 library(dplyr)
+library(tidyr)
 # Load Compustat data
 RawCompustatData <- read.table("./Data/AllDataCompustat.csv", sep = ",", header = TRUE, quote ="")
 
@@ -7,6 +8,9 @@ RawCrspReturnsBetaData <- read.table("./Data/AllDataReturnsBeta.csv", sep = ",",
 
 # Load CRSP data for share price and number of shares outstanding
 RawCrspPriceSharesData <- read.table("./Data/AllPriceSharesCRSP.csv", sep = ",", header = TRUE, quote ="")
+
+# Load Fama French Benchmarks Data
+FamaData <- read.table("./Data/FamaFactors.CSV", sep = ",", header = TRUE, quote ="")
 
 # Load Linking Data
 linkTable <- read.table("./Data/linkCrspCompustat.csv", sep = ",", header = TRUE, quote ="")
@@ -80,15 +84,22 @@ fundamentalMerge <- na.omit(fundamentalMerge)
 # Remove broken CUIPS & other ID cols that are causing trouble in MATLAB
 fundamentalMerge <- select(fundamentalMerge, -CUSIP.x, -CUSIP.y, -LIID, -LINKENDDT, -CUSIP)
 
-
 # ---------------- FORMAT RETURNS DATA INTO COLUMNAR FORM WITH COLS OF SECURITIES AND ROWS OF HISTORICAL RETURNS -----------------
-# take only returns PERMNOs that also exist in fundamentalMerge
+crspReturnsBetaData <- na.omit(crspReturnsBetaData)
+crspReturnsBetaData <- subset(crspReturnsBetaData, PERMNO %in% fundamentalMerge$PERMNO)
 
 # count distinct PERMNOs in Returns data to double check columns match rows
+count(distinct(crspReturnsBetaData, PERMNO))
 
 # transpose so that columns are equities and rows are returns
+returnsOutput <- select(crspReturnsBetaData, TICKER, Date, RET) 
 
-# get rid of extraneous data
+returnsOutput <- pivot_wider(returnsOutput, names_from = TICKER, values_from = RET)
+returnsOutput <- mutate(returnsOutput, Date = substr(returnsOutput$Date,0,6))
+returnsOutput <- returnsOutput[!duplicated(returnsOutput$Date), ]
+
+# ------------------------ CHECK FAMA BENCHMARKS DATA AND NORMALIZE FOR RETURNS -------------------------
+#FamaData # TODO: make sure Dates are in same format as returnsoutput
 
 
 # ------------------------ EXPORT AS CSV -------------------------
@@ -97,4 +108,4 @@ fundamentalMerge <- select(fundamentalMerge, -CUSIP.x, -CUSIP.y, -LIID, -LINKEND
 write.csv(fundamentalMerge, paste0("./Data/OrganizedData/",year,"Fundamentals.csv"), row.names = FALSE)
 
 # Send crspReturnsBetaData data table to Matlab for regression
-write.csv(crspReturnsBetaData, paste0("./Data/OrganizedData/",year,"Returns.csv"), row.names = FALSE)
+write.csv(returnsOutput, paste0("./Data/OrganizedData/",year,"Returns.csv"), row.names = FALSE)

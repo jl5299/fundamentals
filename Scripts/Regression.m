@@ -1,4 +1,3 @@
-% Script Template for Justin
 %% Import data from text file
 % Script for importing data from the following text file:
 %
@@ -65,8 +64,6 @@ logMarketCaps = log(Fundamentals{:,51});
 %   a constant term for the intercept.  All of the previous simulation is
 %   only necessary to set up this example.
 FundamentalX = [ones(length(FundamentalFactors), 1), FundamentalFactors];
-% @@@@@@ SHOULDN"T NUMBER OF ASSETS BE # OF UNIQUE ASSETS? THERE ARE
-% MULTIPLE OF EACH ONE AT DIFFERENT DATES RIGHT NOW... @@@@@@   
 FundamentalBetas = FundamentalX \ logMarketCaps;
 
 % Calculate Fitted Fundamental Values using estimated coefficients
@@ -83,9 +80,10 @@ priorAlpha = logResid/3;
 
 %% Part 2:  Estimate Bayesian CAPM Regression to Estimate Parameters for 
 %           Means and Variances
+%monthly returns of stocks returned on monthly benchmarks
 
 %@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ BELOW ONLY SIM
-T = 120; % Number of Months of Data
+T = 120; % Number of Months of Data $$$$$$$$$$$$$$$$$ SHOULDNT THIS BE 12? WHY 120?
 K = 3; % Number of Benchmark Factors in Asset Pricing Model
 
 % Begin Generating Simulated Return Series
@@ -93,20 +91,29 @@ K = 3; % Number of Benchmark Factors in Asset Pricing Model
 %Assume Factors are uncorrelated with volatility 20% and annualized mean 5%
 %  Note:  These will be the Fama French Factors, taken from Ken French's 
 %  website, so you won't need to simulate them
-Benchmarks = randn(T, K)*(0.2/sqrt(12)) + 0.05/12;
+% system
+% Benchmarks = randn(T, K)*(0.2/sqrt(12)) + 0.05/12;
 
 %Generate Random Betas: These are used to simulate returns, so again, you
 %   won't need to do this, it's just for the illustration
-Betas = [randn(N, 1) + 1, randn(N, K-1)]';
-Alphas = randn(N, 1)*0.02;
-SigmaEs = randn(N, 1)*0.03+0.2;
+% Betas = [randn(length(FundamentalFactors), 1) + 1, randn(length(FundamentalFactors), K-1)]';
+% Alphas = randn(length(FundamentalFactors), 1)*0.02;
+% SigmaEs = randn(length(FundamentalFactors), 1)*0.03+0.2;
 
 % Simulate Return Residuals
-Epsys = randn(T, N).*repmat(SigmaEs', T, 1);
+% Epsys = randn(T, length(FundamentalFactors)).*repmat(SigmaEs', T, 1);
 
 % Simulate Returns
-Returns = repmat(Alphas', T, 1) + Benchmarks*Betas + Epsys;
+% Returns = repmat(Alphas', T, 1) + Benchmarks*Betas + Epsys; % $###$#$@$@#$ returns = part 1 esitmated resid
+
 %@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ABOVE ONLY SIM
+
+% TODO: IMPORT RETURNS DATA AS COLS OF SECURITIES, ROWS OF MONTHS
+
+% TODO: IMPORT BENCHMARKS DATA AS MONTHS OF BETAS
+
+
+
 
 % End Generating Simulated Return Series, essentially none of the above
 %   will be necessary, as you'll be working with real return data
@@ -123,8 +130,8 @@ BenchmarkCovMat = cov(Benchmarks);
 %Step 1) Compute cross-sectional average residual squared error, this is
 %           a shortcut for approximating a full conditional conjugate prior
 %           model.  
-s2=zeros(N,1);
-for i=1:N
+s2=zeros(length(FundamentalFactors),1);
+for i=1:length(FundamentalFactors)
     % trimming data to exclude missing (nan) data
     temp=logical(1-isnan(Returns(:,i)));
     Ri=Returns(temp,i);
@@ -156,10 +163,10 @@ PriorAlphaVar = (sigma_alpha^2)/s2bar;
 %Step 2:  Compute Posterior RGP Parameters
 
 % Create placeholders for parameters
-PostTheta = zeros(N, 1 + K);
-Psi   = zeros(N, 1);
+PostTheta = zeros(length(FundamentalFactors), 1 + K);
+Psi   = zeros(length(FundamentalFactors), 1);
 
-for i = 1:N %on each column (returns) Yvars
+for i = 1:length(FundamentalFactors) %on each column (returns) Yvars
 
     % trim data to exclude missing (nan) data ---> organizing fama french
     % data
