@@ -84,24 +84,44 @@ fundamentalMerge <- na.omit(fundamentalMerge)
 # Remove broken CUIPS & other ID cols that are causing trouble in MATLAB
 fundamentalMerge <- select(fundamentalMerge, -CUSIP.x, -CUSIP.y, -LIID, -LINKENDDT, -CUSIP)
 
+fundamentalMerge <- fundamentalMerge[order(fundamentalMerge$TICKER),]
+fundamentalMerge <- mutate(fundamentalMerge, Date = substr(fundamentalMerge$Date,0,6))
+fundamentalMerge <- subset(fundamentalMerge, TICKER %in% crspReturnsBetaData$TICKER)
+fundamentalMerge <- fundamentalMerge[!duplicated(fundamentalMerge$TICKER), ]
+fundamentalMerge <- fundamentalMerge[!duplicated(fundamentalMerge$PERMNO), ]
+
 # ---------------- FORMAT RETURNS DATA INTO COLUMNAR FORM WITH COLS OF SECURITIES AND ROWS OF HISTORICAL RETURNS -----------------
 crspReturnsBetaData <- na.omit(crspReturnsBetaData)
 crspReturnsBetaData <- subset(crspReturnsBetaData, PERMNO %in% fundamentalMerge$PERMNO)
+crspReturnsBetaData <- subset(crspReturnsBetaData, TICKER %in% fundamentalMerge$TICKER)
 
 # count distinct PERMNOs in Returns data to double check columns match rows
 count(distinct(crspReturnsBetaData, PERMNO))
 
 # transpose so that columns are equities and rows are returns
 returnsOutput <- select(crspReturnsBetaData, TICKER, Date, RET) 
+returnsOutput <- mutate(returnsOutput, RET = as.numeric(sub("%", "",RET,fixed=TRUE))/100)
+returnsOutput <- returnsOutput[order(returnsOutput$TICKER),]
+
 
 returnsOutput <- pivot_wider(returnsOutput, names_from = TICKER, values_from = RET)
 returnsOutput <- mutate(returnsOutput, Date = substr(returnsOutput$Date,0,6))
+returnsOutput <- subset(returnsOutput, Date <= year)
+
 returnsOutput <- returnsOutput[!duplicated(returnsOutput$Date), ]
+returnsOutput <- returnsOutput[order(returnsOutput$Date),]
+returnsOutput <- select(returnsOutput, -Date) 
+
+# Use this to check if match with fundamental rows
+# returnsOutput <- data.frame(t(returnsOutput))
+
+
 
 # ------------------------ CHECK FAMA BENCHMARKS DATA AND NORMALIZE FOR RETURNS -------------------------
-#FamaData # TODO: make sure Dates are in same format as returnsoutput
-
-
+#FamaData # TODO: Make sure columns of Returns match rows of fundamentals
+FamaData <- subset(FamaData, Date %in% returnsOutput$Date)
+FamaData <- FamaData[order(FamaData$Date),]
+FamaData <- select(FamaData, SMB, HML, RF)
 # ------------------------ EXPORT AS CSV -------------------------
 
 # Send fundamentalMerge data table to Matlab for regression
@@ -109,3 +129,7 @@ write.csv(fundamentalMerge, paste0("./Data/OrganizedData/",year,"Fundamentals.cs
 
 # Send crspReturnsBetaData data table to Matlab for regression
 write.csv(returnsOutput, paste0("./Data/OrganizedData/",year,"Returns.csv"), row.names = FALSE)
+
+# Send FamaData data table to Matlab for regression
+write.csv(FamaData, paste0("./Data/OrganizedData/",year,"FamaData.csv"), row.names = FALSE)
+
