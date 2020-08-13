@@ -10,13 +10,13 @@ RawCrspReturnsBetaData <- read.table("./Data/AllDataReturnsBeta.csv", sep = ",",
 RawCrspPriceSharesData <- read.table("./Data/AllPriceSharesCRSP.csv", sep = ",", header = TRUE, quote ="")
 
 # Load Fama French Benchmarks Data
-FamaData <- read.table("./Data/FamaFactors.CSV", sep = ",", header = TRUE, quote ="")
+FamaDataRaw <- read.table("./Data/FamaFactors.CSV", sep = ",", header = TRUE, quote ="")
 
 # Load Linking Data
 linkTable <- read.table("./Data/linkCrspCompustat.csv", sep = ",", header = TRUE, quote ="")
 linkTable <- rename(linkTable, PERMNO = LPERMNO, CUSIP = cusip, GVKEY = gvkey)
 
-# FOR DIFFERENT YEARS... RUN BELOW
+# # ------------------------ FOR DIFFERENT YEARS... RUN BELOW# ------------------------ 
 # SELECT YEAR FOR EACH
 year <- 1987
 
@@ -102,10 +102,11 @@ count(distinct(crspReturnsBetaData, PERMNO))
 returnsOutput <- select(crspReturnsBetaData, TICKER, Date, RET) 
 returnsOutput <- mutate(returnsOutput, RET = as.numeric(sub("%", "",RET,fixed=TRUE))/100)
 returnsOutput <- returnsOutput[order(returnsOutput$TICKER),]
-
+returnsOutput <- na.omit(returnsOutput)
 
 returnsOutput <- pivot_wider(returnsOutput, names_from = TICKER, values_from = RET)
 returnsOutput <- mutate(returnsOutput, Date = substr(returnsOutput$Date,0,6))
+
 returnsOutput <- subset(returnsOutput, Date <= year)
 
 returnsOutput <- returnsOutput[!duplicated(returnsOutput$Date), ]
@@ -114,22 +115,26 @@ returnsOutput <- select(returnsOutput, -Date)
 
 # Use this to check if match with fundamental rows
 # returnsOutput <- data.frame(t(returnsOutput))
-
-
+# plot( colSums(is.na(returnsOutput)))
 
 # ------------------------ CHECK FAMA BENCHMARKS DATA AND NORMALIZE FOR RETURNS -------------------------
 #FamaData # TODO: Make sure columns of Returns match rows of fundamentals
-FamaData <- subset(FamaData, Date %in% returnsOutput$Date)
+FamaData <- subset(FamaDataRaw, Date <= year*100)
 FamaData <- FamaData[order(FamaData$Date),]
 FamaData <- select(FamaData, SMB, HML, RF)
-# ------------------------ EXPORT AS CSV -------------------------
 
+# ------------------------ REMOVE NAN COLUMNS -------------------------
+emptycols <- colSums(is.na(returnsOutput)) > 250
+returnsOutput <- returnsOutput[!emptycols]
+fundamentalMerge <- subset(fundamentalMerge, TICKER %in% colnames(returnsOutput))
+
+# ------------------------ EXPORT AS CSV -------------------------
 # Send fundamentalMerge data table to Matlab for regression
-write.csv(fundamentalMerge, paste0("./Data/OrganizedData/",year,"Fundamentals.csv"), row.names = FALSE)
+write.csv(fundamentalMerge, paste0("./Data/OrganizedData/","Fundamentals.csv"), row.names = FALSE)
 
 # Send crspReturnsBetaData data table to Matlab for regression
-write.csv(returnsOutput, paste0("./Data/OrganizedData/",year,"Returns.csv"), row.names = FALSE)
+write.csv(returnsOutput, paste0("./Data/OrganizedData/","Returns.csv"), row.names = FALSE)
 
 # Send FamaData data table to Matlab for regression
-write.csv(FamaData, paste0("./Data/OrganizedData/",year,"FamaData.csv"), row.names = FALSE)
+write.csv(FamaData, paste0("./Data/OrganizedData/","FamaData.csv"), row.names = FALSE)
 

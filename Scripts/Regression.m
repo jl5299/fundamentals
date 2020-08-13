@@ -8,7 +8,7 @@ opts.Delimiter = ",";
 
 % Specify column names and types
 opts.VariableNames = ["PERMNO", "Date", "GVKEY", "DATADATE", "qtrsback", "conm", "exchg", "sic", "tic", "datacqtr", "ACOQh", "AOQh", "APQh", "ATQh", "CEQQh", "CHEQh", "DLTTQh", "DOQh", "DVPQh", "DVQh", "IBADJQh", "IBCOMQh", "IBQh", "ICAPTQh", "LCOQh", "LOQh", "LTQh", "NIQh", "NOPIQh", "PIQh", "PPENTQh", "PSTKQh", "PSTKRQh", "SALEQh", "SEQQh", "TEQQh", "TXTQh", "XIDOQh", "LINKPRIM", "LINKTYPE", "LPERMCO", "LINKDT", "TICKER", "PRC", "SHROUT", "vwretd", "vwretx", "ewretd", "ewretx", "sprtrn", "capital"];
-opts.VariableTypes = ["double", "datetime", "double", "double", "double", "string", "double", "double", "string", "categorical", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "categorical", "categorical", "double", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double"];
+opts.VariableTypes = ["double", "double", "double", "double", "double", "string", "double", "double", "string", "categorical", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "categorical", "categorical", "double", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double"];
 
 % Specify file level properties
 opts.ExtraColumnsRule = "ignore";
@@ -17,10 +17,9 @@ opts.EmptyLineRule = "read";
 % Specify variable properties
 opts = setvaropts(opts, ["conm", "tic", "TICKER"], "WhitespaceRule", "preserve");
 opts = setvaropts(opts, ["conm", "tic", "datacqtr", "LINKPRIM", "LINKTYPE", "TICKER"], "EmptyFieldRule", "auto");
-opts = setvaropts(opts, "Date", "InputFormat", "yyyyMMdd");
 
 % Import the data
-Fundamentals = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\1987Fundamentals.csv", opts);
+Fundamentals = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\Fundamentals.csv", opts);
 
 % Clear temporary variables
 clear opts
@@ -41,7 +40,7 @@ opts.ExtraColumnsRule = "ignore";
 opts.EmptyLineRule = "read";
 
 % Import the data
-Benchmarks = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\1987FamaData.csv", opts);
+Benchmarks = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\FamaData.csv", opts);
 
 Benchmarks = table2array(Benchmarks)
 
@@ -49,10 +48,10 @@ Benchmarks = table2array(Benchmarks)
 clear opts
 
 %% Import Returns Table
-opts = detectImportOptions("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\1987returns.csv");
+opts = detectImportOptions("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\returns.csv");
 numVariables = length(opts.VariableNames);
 opts.VariableTypes = repmat("double", 1, numVariables);
-Returns = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\1987returns.csv",opts);
+Returns = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\returns.csv",opts);
 
 Returns = table2array(Returns)
 
@@ -188,6 +187,8 @@ PriorAlphaVar = (sigma_alpha^2)/s2bar;
 % Create placeholders for parameters
 PostTheta = zeros(length(FundamentalFactors), 1 + K);
 Psi   = zeros(length(FundamentalFactors), 1);
+
+
 
 for i = 1:length(FundamentalFactors) %on each column (returns) Yvars
 
