@@ -1,3 +1,8 @@
+%% Set variables
+sigmaAlphaInput = 0.05; % sigmaalpha (0.01 to 0.1)
+gamma = 20; % gamma (2,4,8,16)
+year = 1987;
+
 %% Import Fundamentals Data
 % Setup the Import Options and import the data
 opts = delimitedTextImportOptions("NumVariables", 51);
@@ -22,8 +27,8 @@ opts = setvaropts(opts, ["conm", "tic", "datacqtr", "LINKPRIM", "LINKTYPE", "TIC
 Fundamentals = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\Fundamentals.csv", opts);
 
 % Clear temporary variables
-clear opts
-%% Import Benchmarks Data
+clear opts 
+%% Import Benchmarks Data (Fama French Factors)
 % Setup the Import Options and import the data
 opts = delimitedTextImportOptions("NumVariables", 3);
 
@@ -42,7 +47,7 @@ opts.EmptyLineRule = "read";
 % Import the data
 Benchmarks = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\FamaData.csv", opts);
 
-Benchmarks = table2array(Benchmarks)
+Benchmarks = table2array(Benchmarks);
 
 % Clear temporary variables
 clear opts
@@ -53,43 +58,26 @@ numVariables = length(opts.VariableNames);
 opts.VariableTypes = repmat("double", 1, numVariables);
 Returns = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\returns.csv",opts);
 
-Returns = table2array(Returns)
+Returns = table2array(Returns);
 
 clear opts
 clear numVariables
 %% Part I:  Estimate Fundamental Values and Mispricing 
-% This block of code simulates fundamental values and market
-%   capitalizations, estimates the fitted fundamental values and degree of
+% This block of code estimates the fitted fundamental values and degree of
 %   mispricing in order to parameterize the prior expected alpha in terms
 %   of reversion in current market caps to fundamental values.  
 
-% L = 27; % Number of Fundamental Factors
-% N = 500; % Number of Assets in Universe
+% L = 27 = Number of Fundamental Factors
+% N = Number of Assets in Universe
 
-% Simulate Fundamental Factors.  The distribution used here is arbitrary,
-% but you'll have real data so it's just a placeholder.  
-% FundamentalFactors = randn(N, L)+7;
 FundamentalFactors = Fundamentals{:,(11:38)};
 
-% Assume the log Fundamental value is just the Mean of the Assets' 
-%    Fundamental Factors.  This is dumb, but you'll have real data so it's
-%    really just here as a placeholder.
-% logFundamentalValue = mean(FundamentalFactors, 2);
-% @@@@@@@@ THIS AINT EVEN USED HERE.... @@@@
-
-% Simulating real market capitalizations as perturbed versions of their log
-%   Fundamental Values.  It probably makes sense to have your y variable be
-%   logged market capitalizations so they're more normally distributed.
-%   Again, the simulation specificaton is arbitrary because you'll actually
-%   be using real data.
-% logMarketCaps = logFundamentalValue + randn(N, 1)*0.25; 
 logMarketCaps = log(Fundamentals{:,51});
 
 % Estimate Regression of log Market Caps on Fundamental Factors, including
-%   a constant term for the intercept.  All of the previous simulation is
-%   only necessary to set up this example.
+%   a constant term for the intercept.
 FundamentalX = [ones(length(FundamentalFactors), 1), FundamentalFactors];
-FundamentalBetas = FundamentalX \ logMarketCaps;
+FundamentalBetas = FundamentalX \ logMarketCaps;  % \ --> Solve systems of linear equations Ax = B for x
 
 % Calculate Fitted Fundamental Values using estimated coefficients
 logMarketCapHat = FundamentalX*FundamentalBetas;
@@ -101,44 +89,16 @@ logResid = logMarketCaps - logMarketCapHat;
 %   the logResid already states the mispricing in percentage terms, this
 %   postulates that market caps will revert to estimated fundamental values
 %   in 3 years.
-priorAlpha = logResid/3;
+priorAlpha = -logResid/300;
+
+
 
 %% Part 2:  Estimate Bayesian CAPM Regression to Estimate Parameters for 
 %           Means and Variances
 %monthly returns of stocks returned on monthly benchmarks
 
 K = 3; % Number of Benchmark Factors in Asset Pricing Model
-
-%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ BELOW ONLY SIM
-% T = 120; % Number of Months of Data $$$$$$$$$$$$$$$$$ SHOULDNT THIS BE 12? WHY 120?
-
-% Begin Generating Simulated Return Series
-
-%Assume Factors are uncorrelated with volatility 20% and annualized mean 5%
-%  Note:  These will be the Fama French Factors, taken from Ken French's 
-%  website, so you won't need to simulate them
-% system
-
-% Benchmarks = randn(T, K)*(0.2/sqrt(12)) + 0.05/12;
-
-
-%Generate Random Betas: These are used to simulate returns, so again, you
-%   won't need to do this, it's just for the illustration
-% Betas = [randn(length(FundamentalFactors), 1) + 1, randn(length(FundamentalFactors), K-1)]';
-% Alphas = randn(length(FundamentalFactors), 1)*0.02;
-% SigmaEs = randn(length(FundamentalFactors), 1)*0.03+0.2;
-
-% Simulate Return Residuals
-% Epsys = randn(T, length(FundamentalFactors)).*repmat(SigmaEs', T, 1);
-
-% Simulate Returns
-% Returns = repmat(Alphas', T, 1) + Benchmarks*Betas + Epsys; % $###$#$@$@#$ returns = part 1 esitmated resid
-
-%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ABOVE ONLY SIM
-
-
-% End Generating Simulated Return Series, essentially none of the above
-%   will be necessary, as you'll be working with real return data
+% T = Number of Months of Data
 
 % Begin Estimating Return Generating Process
 
@@ -146,8 +106,6 @@ K = 3; % Number of Benchmark Factors in Asset Pricing Model
 %   benchmark return generating process
 BenchmarkRiskPremium = mean(Benchmarks);
 BenchmarkCovMat = cov(Benchmarks);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Step 1) Compute cross-sectional average residual squared error, this is
 %           a shortcut for approximating a full conditional conjugate prior
@@ -179,16 +137,13 @@ s2bar = mean(s2);
 %   "tight" prior is around 1% (annualized), while a relatively loose one
 %   would be around 10%.  Think of the posterior alpha as lying in a range
 %   of the prior alpha +/- 2 sigma_alphas.  
-sigma_alpha = 0.01/12; 
+sigma_alpha = sigmaAlphaInput/12; 
 PriorAlphaVar = (sigma_alpha^2)/s2bar;
 
 %Step 2:  Compute Posterior RGP Parameters
-
 % Create placeholders for parameters
 PostTheta = zeros(length(FundamentalFactors), 1 + K);
 Psi   = zeros(length(FundamentalFactors), 1);
-
-
 
 for i = 1:length(FundamentalFactors) %on each column (returns) Yvars
 
@@ -229,6 +184,11 @@ end
 disp('Maximum Annualized Alpha Deviation from Calibrated Prior:')
 disp(12*max(abs(PostTheta(:, 1) - priorAlpha/12)))
 
+% This was to find the max row that was throwing everything off (max alpha
+% deviation)
+disp(find((abs(PostTheta(:,1)-priorAlpha/12)== max(abs(PostTheta(:,1)-priorAlpha/12)))))
+
+
 %% Part 3:  Estimate Means and Covariance Matrix for Returns to use in 
 %             Portfolio optimization exercise
 
@@ -242,15 +202,71 @@ Sigma = PostBeta*BenchmarkCovMat*PostBeta'+diag(Psi); %1500 x1500
 % Quadratic Programming Exercise
 
 % Constrain weights to be non-negative (lower bound/upper bound)
-lb = zeros(N, 1);
-ub = ones(N, 1); 
+lb = zeros(length(FundamentalFactors), 1);
+ub = ones(length(FundamentalFactors), 1); 
 
 % Constrain weights to sum to unity
-Aeq = ones(1, N);
+Aeq = ones(1, length(FundamentalFactors));
 beq = 1;
 
-% Optimize weights with Utility:  U = E - (gamma/2)*V
-gamma = 2;
+% Optimize weights with Utility:  U = E - (gamma/2)*V (built into
+% quadprog)
+% Gamma at 10 or 20 gives good vals (risk aversion) 
+% gamma 1 or 2 ~ risk tolerant, higher is risk averse 
 [w_opt, UStar, ExitFlag, Output] = ...
     quadprog(gamma*Sigma/2,-mu, [], [], Aeq, beq, lb, ub);
 %w_opt is portfolio from June (year) to June (year+1)
+
+SR = mu./sqrt(diag(Sigma)); % Sharpe ratio 
+
+%% Todo:
+
+% Fix gamma to keep risk apetite
+% Vary sigma alpha to contrast effects -- weights and expected returns
+% should be pos correlated to sigma alpha (positive prior alpha), expected
+% returns / weights drop (neg prior alpha)
+
+% Find top 5 assets with largest neg / pos prior alpha (sensitivity
+% analysis w.r.t sigmaalpha)
+% - expected returns
+% - weights
+
+
+%% Part 3.5: Find top 5 and bottom 5 assets and relevant stats
+alphaDeviation = 12*(abs(PostTheta(:, 1) - priorAlpha/12));
+
+[sortedpriorAlpha, sortedInds] = sort(priorAlpha(:),'descend');
+[sortedCalibratedAlpha, sortedIndsCal] = sort(alphaDeviation,'descend');
+
+topCal = sortedIndsCal(1:5);
+botCal = sortedIndsCal(end-5:end);
+
+top5 = sortedInds(1:5);
+bot5 = sortedInds(end-5:end);
+
+resultsTop = Fundamentals(top5, "TICKER");
+resultsTop.year = ones(height(resultsTop),1)*year;
+resultsTop.gamma = ones(height(resultsTop),1)*gamma;
+resultsTop.sigmaAlpha = ones(height(resultsTop),1)*sigmaAlphaInput;
+resultsTop.Pior_Alpha = priorAlpha(top5);
+resultsTop.Weights = w_opt(top5);
+% resultsTop.index = top5;
+resultsTop.Annualized_Alpha_Deviation_from_Calibrated_Prior = alphaDeviation(topCal);
+
+
+resultsBot = Fundamentals(bot5, "TICKER");
+resultsBot.year = ones(height(resultsBot),1)*year;
+resultsBot.gamma = ones(height(resultsBot),1)*gamma;
+resultsBot.sigmaAlpha = ones(height(resultsBot),1)*sigmaAlphaInput;
+resultsBot.PriorAlpha = priorAlpha(bot5);
+resultsBot.Weights = w_opt(bot5);
+% resultsBot.index = bot5;
+resultsBot.Annualized_Alpha_Deviation_from_Calibrated_Prior = alphaDeviation(botCal);
+
+
+% gamma - preferences on expected returns
+% sigma alpha - preferences on expectations (prior)
+
+disp(resultsTop)
+disp(resultsBot)
+
