@@ -23,6 +23,7 @@ year <- 1987
 compustatData <- subset(RawCompustatData, substr(RawCompustatData$POINTDATE, 0, 4) == year)
 crspReturnsBetaData <- subset(RawCrspReturnsBetaData, substr(RawCrspReturnsBetaData$DATE, 0, 4) <= year)
 crspPriceSharesData <- subset(RawCrspPriceSharesData, substr(RawCrspPriceSharesData$date, 0, 4) == year)
+nextReturns <- subset(RawCrspReturnsBetaData, substr(RawCrspReturnsBetaData$DATE, 0,4) == (as.integer(year)+1))
 
 # ------------------------ COMPUSTAT DATA -------------------------
 # Remove Data Codes
@@ -67,10 +68,12 @@ crspPriceSharesData <- subset(crspPriceSharesData, !(is.na(crspPriceSharesData$T
                                                     | crspPriceSharesData$TICKER == "" | crspPriceSharesData$Date == ""
                                                     | crspPriceSharesData$PRC < 5 | is.na(crspPriceSharesData$SHROUT)))
 
+crspPriceSharesData <- crspPriceSharesData %>% group_by(PERMNO) %>% slice(which.max(Date))
+
 
 # ------------------ FUNDAMENTALDATA - MERGE & REMOVE DATA THAT DOESN'T HAVE ALL REQUIREMENTS ACROSS DATASETS -------------------
 # Match with CRSP Data using CUSIP
-fundamentalMerge <- merge(compustatData, crspPriceSharesData, by = c("PERMNO", "Date"), all = FALSE)
+fundamentalMerge <- merge(compustatData, crspPriceSharesData, by = c("PERMNO"), all = FALSE)
 
 # Remove row from fundamentalMerge if data not also in returns data
 fundamentalMerge <- subset(fundamentalMerge, PERMNO %in% crspReturnsBetaData$PERMNO)
@@ -82,7 +85,7 @@ fundamentalMerge <- mutate(fundamentalMerge, capital = fundamentalMerge$SHROUT *
 fundamentalMerge <- na.omit(fundamentalMerge)
 
 # Remove broken CUIPS & other ID cols that are causing trouble in MATLAB
-fundamentalMerge <- select(fundamentalMerge, -CUSIP.x, -CUSIP.y, -LIID, -LINKENDDT, -CUSIP)
+fundamentalMerge <- select(fundamentalMerge, -Date.y, -CUSIP.x, -CUSIP.y, -LIID, -LINKENDDT, -CUSIP)
 
 fundamentalMerge <- fundamentalMerge[order(fundamentalMerge$TICKER),]
 fundamentalMerge <- mutate(fundamentalMerge, Date = substr(fundamentalMerge$Date,0,6))
@@ -101,8 +104,9 @@ count(distinct(crspReturnsBetaData, PERMNO))
 # transpose so that columns are equities and rows are returns
 returnsOutput <- select(crspReturnsBetaData, TICKER, Date, RET) 
 returnsOutput <- mutate(returnsOutput, RET = as.numeric(sub("%", "",RET,fixed=TRUE))/100)
-returnsOutput <- returnsOutput[order(returnsOutput$TICKER),]
 returnsOutput <- na.omit(returnsOutput)
+
+returnsOutput <- returnsOutput[order(returnsOutput$TICKER),]
 
 returnsOutput <- pivot_wider(returnsOutput, names_from = TICKER, values_from = RET)
 returnsOutput <- mutate(returnsOutput, Date = substr(returnsOutput$Date,0,6))
@@ -138,3 +142,5 @@ write.csv(returnsOutput, paste0("./Data/OrganizedData/","Returns.csv"), row.name
 # Send FamaData data table to Matlab for regression
 write.csv(FamaData, paste0("./Data/OrganizedData/","FamaData.csv"), row.names = FALSE)
 
+# Send next year's returns data table to Matlab for portfolio testing
+write.csv(nextReturns, paste0("./Data/OrganizedData/","nextReturns.csv"), row.names = FALSE)
