@@ -1,12 +1,13 @@
 %% Set variables
-year = 2017;
+year = 1987;
 % sigmaAlphaInput = 0.03;
 % gamma = 4;
-% for sigmaAlphaInput = [0.01,0.1] % sigmaalpha (0.01 - 0.1)
-for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigmaalpha (0.01 - 0.1)
-%     for gamma = [2,16] % gamma (2 - 16)
-    for gamma = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] % gamma (2 - 16)
-
+for sigmaAlphaInput = [0.01,0.1] % sigmaalpha (0.01 - 0.1)
+% for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigmaalpha (0.01 - 0.1)
+    for gamma = [2,16] % gamma (2 - 16)
+%     for gamma = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] % gamma (2 - 16)
+        
+        % ------------------------ DATA IMPORTS -------------------------
         % Import Fundamentals Data
         % Setup the Import Options and import the data
         opts = delimitedTextImportOptions("NumVariables", 51);
@@ -66,28 +67,27 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
 
         clear opts
         clear numVariables
+        
+        % -------------------- END DATA IMPORTS -------------------------
+
         % Part I:  Estimate Fundamental Values and Mispricing 
         % This block of code estimates the fitted fundamental values and degree of
         %   mispricing in order to parameterize the prior expected alpha in terms
         %   of reversion in current market caps to fundamental values.  
 
         % L = 27 = Number of Fundamental Factors
-        % N = Number of Assets in Universe
 
         FundamentalFactors = Fundamentals{:,(11:38)};
 
         logMarketCaps = log(Fundamentals{:,51});
 
-        % Estimate Regression of log Market Caps on Fundamental Factors, including
-        %   a constant term for the intercept.
+        % Estimate Regression of log Market Caps on Fundamental Factors, including a constant term for the intercept.
         FundamentalX = [ones(length(FundamentalFactors), 1), FundamentalFactors];
         
         FundamentalBetas = FundamentalX \ logMarketCaps;  % \ --> Solve systems of linear equations Ax = B for x
-%         corr(FundamentalX)
-%         disp("see above")
+
         % Calculate Fitted Fundamental Values using estimated coefficients
         logMarketCapHat = FundamentalX*FundamentalBetas;
-
 
         % Recover Residuals Characterizing Mispricing
         logResid = logMarketCaps - logMarketCapHat;
@@ -101,7 +101,7 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
     
         % Part 2:  Estimate Bayesian CAPM Regression to Estimate Parameters for 
         %           Means and Variances
-        %monthly returns of stocks returned on monthly benchmarks
+        % monthly returns of stocks returned on monthly benchmarks
 
         K = 3; % Number of Benchmark Factors in Asset Pricing Model
         % T = Number of Months of Data
@@ -174,7 +174,6 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
             % Calculate Posterior Expectations and Variances
             PostV = inv(inv(PriorV) + XprimeX);
             PostThetai = PostV*(PriorV\PriorB + XprimeX*thetahat); %theta is vector - coefficient for asset i that takes A,B into acc
-            %posttheta should have 1500 rows (all 1500 assets, with fama french)
             ParamUncertaintyAdj = (thetahat - PriorB)'*... % Vector update formula
                                         inv(PriorV+inv(XprimeX))*...
                                           (thetahat - PriorB)/(Ti-K-1);
@@ -194,7 +193,6 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
         % This was to find the max row that was throwing everything off (max alpha
         % deviation)
         disp(find((abs(PostTheta(:,1)-priorAlpha/12)== max(abs(PostTheta(:,1)-priorAlpha/12)))))
-
 
         % Part 3:  Estimate Means and Covariance Matrix for Returns to use in 
         %             Portfolio optimization exercise
@@ -226,13 +224,14 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
 
         SR = mu./sqrt(diag(Sigma)); % Sharpe ratio 
 
-
         % Part 3.5: Find top 5 and bottom 5 assets and relevant stats
         alphaDeviation = 12*(abs(PostTheta(:, 1) - priorAlpha/12));
 
         [sortedpriorAlpha, sortedInds] = sort(priorAlpha(:),'descend');
         [sortedCalibratedAlpha, sortedIndsCal] = sort(alphaDeviation,'descend');
-
+ 
+       
+        % My method of finding winners/losers
 %         topCal = sortedIndsCal(1:5);
 %         botCal = sortedIndsCal(end-4:end);
 
@@ -249,7 +248,6 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
         topCal = sortedIndsCal(1:length(top5));
         botCal = sortedIndsCal(end-length(bot5)+1:end);
         
-
         resultsTop = Fundamentals(top5, "TICKER");
         resultsTop.year = ones(height(resultsTop),1)*year;
         resultsTop.gamma = ones(height(resultsTop),1)*gamma;
@@ -269,10 +267,6 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
         % resultsBot.index = bot5;
         resultsBot.Annualized_Alpha_Deviation_from_Calibrated_Prior = alphaDeviation(botCal);
 
-
-        % gamma - preferences on expected returns
-        % sigma alpha - preferences on expectations (prior)
-
         disp(resultsTop)
         disp(resultsBot)
 
@@ -281,5 +275,52 @@ for sigmaAlphaInput = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1] % sigma
     end
 end
 
-portfolioReturnsNextYear = Returns
 
+% Part 4: Portfolio Optimization Backtesting
+
+% --------------------------- DATA IMPORTS -------------------------
+%Import next year returns data
+opts = delimitedTextImportOptions("NumVariables", 13);
+
+% Specify range and delimiter
+opts.DataLines = [2, Inf];
+opts.Delimiter = ",";
+
+% Specify column names and types
+opts.VariableNames = ["PERMNO", "DATE", "n", "RET", "alpha", "b_mkt", "b_smb", "b_hml", "ivol", "tvol", "R2", "exret", "TICKER"];
+opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "categorical"];
+
+% Specify file level properties
+opts.ExtraColumnsRule = "ignore";
+opts.EmptyLineRule = "read";
+
+% Specify variable properties
+opts = setvaropts(opts, "TICKER", "EmptyFieldRule", "auto");
+opts = setvaropts(opts, ["RET", "ivol", "tvol", "R2", "exret"], "TrimNonNumeric", true);
+opts = setvaropts(opts, ["RET", "ivol", "tvol", "R2", "exret"], "ThousandsSeparator", ",");
+
+% Import the data
+nextReturns = readtable("C:\Users\Justin Law\Documents\Projects\Gillen - FA Optimization\fundamentals\Data\OrganizedData\nextReturns.csv", opts);
+
+% Clear temporary variables
+clear opts
+% ------------------------ END DATA IMPORTS -------------------------
+top5Permno = Fundamentals(top5, {'PERMNO'});
+bot5Permno = Fundamentals(bot5, {'PERMNO'});
+
+idxTop = ismember(nextReturns(:,1), top5Permno);
+
+topNextReturns = nextReturns(idxTop,:);
+
+idxBot = ismember(nextReturns(:,1), bot5Permno);
+botNextReturns = nextReturns(idxBot,:);
+
+topNextReturns = topNextReturns(all(~isnan(topNextReturns.RET),2),:);
+botNextReturns = botNextReturns(all(~isnan(botNextReturns.RET),2),:);
+
+topNextSumReturns = sum(topNextReturns.RET)/length(topNextReturns.RET);
+botNextSumReturns = sum(botNextReturns.RET)/length(topNextReturns.RET);
+
+totalReturns = topNextSumReturns - botNextSumReturns;
+disp("Total Returns by financing top quartile prior alpha assets (winners) by shorting bottom quartile prior alpha assets(losers):");
+disp(totalReturns);

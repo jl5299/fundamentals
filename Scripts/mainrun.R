@@ -18,7 +18,7 @@ linkTable <- rename(linkTable, PERMNO = LPERMNO, CUSIP = cusip, GVKEY = gvkey)
 
 # # ------------------------ FOR DIFFERENT YEARS... RUN BELOW# ------------------------ 
 # SELECT YEAR FOR EACH
-year <- 1987
+year <- 1989
 
 compustatData <- subset(RawCompustatData, substr(RawCompustatData$POINTDATE, 0, 4) == year)
 crspReturnsBetaData <- subset(RawCrspReturnsBetaData, substr(RawCrspReturnsBetaData$DATE, 0, 4) <= year)
@@ -117,10 +117,6 @@ returnsOutput <- returnsOutput[!duplicated(returnsOutput$Date), ]
 returnsOutput <- returnsOutput[order(returnsOutput$Date),]
 returnsOutput <- select(returnsOutput, -Date) 
 
-# Use this to check if match with fundamental rows
-# returnsOutput <- data.frame(t(returnsOutput))
-# plot( colSums(is.na(returnsOutput)))
-
 # ------------------------ CHECK FAMA BENCHMARKS DATA AND NORMALIZE FOR RETURNS -------------------------
 #FamaData # TODO: Make sure columns of Returns match rows of fundamentals
 FamaData <- subset(FamaDataRaw, Date <= year*100)
@@ -128,7 +124,7 @@ FamaData <- FamaData[order(FamaData$Date),]
 FamaData <- select(FamaData, SMB, HML, RF)
 
 # ------------------------ REMOVE NAN COLUMNS -------------------------
-emptycols <- colSums(is.na(returnsOutput)) > 250
+emptycols <- colSums(is.na(returnsOutput)) > 250 #Tweak this number to ensure no rank deficiency error (with column of all zero returns in given time)
 returnsOutput <- returnsOutput[!emptycols]
 fundamentalMerge <- subset(fundamentalMerge, TICKER %in% colnames(returnsOutput))
 
@@ -144,3 +140,4 @@ write.csv(FamaData, paste0("./Data/OrganizedData/","FamaData.csv"), row.names = 
 
 # Send next year's returns data table to Matlab for portfolio testing
 write.csv(nextReturns, paste0("./Data/OrganizedData/","nextReturns.csv"), row.names = FALSE)
+
