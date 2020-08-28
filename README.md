@@ -35,12 +35,15 @@ https://wrds-www.wharton.upenn.edu/
 - Sometimes adjustments are made to account for the number of trade-able (free-float) shares
 
 **Bartram/Grinblatt** - 310 return months (Friday Feb 27, march 1987 - Friday Nov 30, december 2012)
+
 **Gillen/Law** - 360 return months 1987 - 2017
 
 **CRSP DATA QUERIES AND SPECIFICATIONS**
+
 **CRSP Monthly Price Data:** "Shares outstanding, price, return" - CRSP Monthly Stock
 - Share Price
 - Number of shares outstanding
+
 **CRSP Returns Data:** "Returns, Beta" - CRSP Beta Suite by WRDS (Beta)
 - Ticker Symbol
 - CUSIP
@@ -49,14 +52,19 @@ https://wrds-www.wharton.upenn.edu/
 - Annual market beta 
 - All stocks listed in NYSE, AMEX, and NASDAQ
 - Share price > $5
+
 **Compustat Fundamental Accounting Factors Data:** "Compustat - AnnualData" - Compustat Point in Time Complete History - US
 
 The data we had access to didn't specify the share classes, differing in procedure from Bartram Grinblatt -- they took only common euqity share classes of US corporations (10 and 11). Ignoring this specification should be alright - majority of stocks that are listed in NYSE, NASDAQ, and AMEX should provide the same results.
 
 **Fama French Data:** http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html#BookEquity
+
 **To add:** Mkt_RF, SMB, HML, Mom, ST-Rev, LT_Rev, CMA, RMW
+
 **Industry classification, portfolios:** 38 Industry Portfolios: http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html#BookEquity
+
 **Industry sic keys: ** http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/det_38_ind_port.html
+
 **SUE:** quarterly unexpected earnings suprised based on rolling seasonal random walk model (Livnat et al. p185)
 
 # MATLAB
